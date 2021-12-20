@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import math
 import re
 import typing
+from math import pi
 
 import definitions
 from instrument.measurements import Distance, Force, Density
 
-pi = math.pi
 _note_names_ = ('A', 'A♯', 'B', 'C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯')
 
 
@@ -20,8 +19,8 @@ def note_name_to_number(name: str) -> int:
     :return: standard note number
     """
     name = name.upper()
-    name = name.replace('#', '♯') # replace with correct hash mark
-    match = re.match(r'([A-G][#♯]?)(-?\d*)', name)# match letter (+sharp) (+ number)
+    name = name.replace('#', '♯')  # replace with correct hash mark
+    match = re.match(r'([A-G][#♯]?)(-?\d*)', name)  # match letter (+sharp) (+ number)
     note_i = match.group(1)
     if match.group(2) == '':
         # checks for number after the letter (+ '#'), if none set to 0'th octave
@@ -55,7 +54,7 @@ class _WireMaterial:
     _code_dict: dict[str, _WireMaterial] = {}
     _name_dict: dict[str, _WireMaterial] = {}
 
-    def __init__(self, code:str, name:str, density: Density):
+    def __init__(self, code: str, name: str, density: Density):
         """
         :param code: reference code for wire type
         :param name: full name of wire type
@@ -81,7 +80,7 @@ class _WireMaterial:
     @classmethod
     def get_by_code(cls, code):
         """
-        get ``_WireMaterial`` item by code \n
+        get :class:`_WireMaterial` item by code \n
         :param code: given code for a wire
         """
         return cls._code_dict[code]
@@ -89,7 +88,7 @@ class _WireMaterial:
     @classmethod
     def get_by_name(cls, name):
         """
-        get ``_WireMaterial`` item by name \n
+        get :class:`_WireMaterial` item by name \n
         :param name: given name for a wire
         """
         return cls._name_dict[name]
@@ -120,7 +119,7 @@ class Note:
 
     def __init__(self, instrument: Instrument, std_note: int):
         """
-        :param instrument: parent instrument
+        :param instrument: parent :class:`Instrument`
         :param std_note: standard note number, A0 = 1, C0 = 4, A4 = 49
         """
         assert isinstance(std_note, int)
@@ -148,22 +147,22 @@ class Note:
         return f'Note {self.std_note}: {note_number_to_name(self.std_note)} Frequency {self.frequency:.4f} hz {tension}'
 
     def calculate_frequency(self):
-        """ calculate the frequency of `Note` based the pitch of A1 in the parent `Insrument` """
+        """ calculate the frequency of `Note` based the pitch of A1 in the parent :class:`Insrument` """
         # frequency = 2 ** ((note_number - 49) / 12 ) * (frequency of A1)
-        self.frequency = 2 ** ((self.std_note - 49) / 12) * self.instrument.pitch_a1()
+        self.frequency = 2 ** ((self.std_note - 49) / 12) * self.instrument.pitch_a4()
 
     def set_material(self, code: str):
         """ :param code: wire material code given as string """
         self.wire_material: _WireMaterial = _WireMaterial.get_by_code(code)
 
     def set_length(self, length: Distance | float):
-        """ :param length: Distance or as millimeters """
+        """ :param length: :class:`Distance` or as millimeters """
         if not isinstance(length, Distance):
             length = Distance(mm=length)
         self.length: Distance = length
 
     def set_diameter(self, diameter: Distance | float):
-        """ :param diameter: Distance or as millimeters """
+        """ :param diameter: :class:`Distance` or as millimeters """
         if not isinstance(diameter, Distance):
             diameter = Distance(mm=diameter)
         self.diameter: Distance = diameter
@@ -176,8 +175,8 @@ class Note:
         """
         Set wire information for the Note
         :param code: wire material code given as string
-        :param length: wire length given as Distance object or in mm
-        :param diameter: wire diameter given as Distance object or in mm
+        :param length: wire length given as :class:`Distance` object or in millimeters
+        :param diameter: wire diameter given as :class:`Distance` object or in millimeters
         :param wire_count: number of wires used per note given as integer (auto 1)
         """
         self.set_material(code)
@@ -196,7 +195,7 @@ class Note:
         --- **π** is the Greek letter pi = 3.14 \n
         --- **δ** is the density of the wire in gm/cm³ (Greek letter small delta) \n
 
-        :return: Tension of the string as `T = πf²L²d²δ`
+        :return: :class:`Tension` of the string as `T = πf²L²d²δ`
         """
         pi_hz = pi * self.frequency ** 2  # πf²
         le = self.length.cm() ** 2  # L²
@@ -214,8 +213,8 @@ class Instrument:
 
     def __init__(self, lowest_key: str | int, highest_key: str | int, pitch: float = 440):
         """
-        :param lowest_key: lowest key on the instrument, given as std number (A0=1) or Scientific Name 'A#2'
-        :param highest_key: lowest key on the instrument, given as std number (A0=1) or Scientific Name 'A#2'
+        :param lowest_key: lowest key on the Instrument, given as std number (A0=1) or Scientific Name 'A#2'
+        :param highest_key: lowest key on the Instrument, given as std number (A0=1) or Scientific Name 'A#2'
         :param pitch: frequency of note A1 in hz
         """
         self._pitch = pitch
@@ -234,8 +233,8 @@ class Instrument:
         """
         self.notes.pop(note_name_to_number(key))
 
-    def pitch_a1(self)->float:
-        """ get frequency of A1 in the `Instrument`"""
+    def pitch_a4(self) -> float:
+        """ get frequency of A1 in the :class:`Instrument`"""
         return self._pitch
 
     def set_pitch(self, pitch: float):
@@ -252,7 +251,7 @@ class Instrument:
         """
         Apply function to a single note
         :param function: any function, applied as function(note)
-        :param note_number: any note, given as std number (A0=1) or Scientific Name 'A#2'
+        :param note_number: any note, given as std number (A0=1) or scientific name 'A#2'
         """
         if isinstance(note_number, str):
             note_number = note_name_to_number(note_number)
@@ -285,4 +284,3 @@ class Instrument:
         """
         for _, note in self.notes.items():
             yield note
-
