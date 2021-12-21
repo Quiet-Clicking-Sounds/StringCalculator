@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="{{url_for('static',filename='css/style.css')}}">
+</head>
+
+<body>
+    <script src="{{url_for('static',filename='js/main.js')}}"></script>
+    <header>
+        <h1>Instrument String Calculator</h1>
+    </header>
+    <div id="main">
+        <span id="instrument">
+        <h2>entry for harpsichord:</h2>
+        <span class="left">
+            <table>
+                <tr>
+                    <th>first note of the instrument</th>
+                    <td><input type="text" name="lowest_key" id="lowest_key" value="F1"></td>
+                </tr>
+                <tr>
+                    <th>last note of the instrument</th>
+                    <td><input type="text" name="highest_key" id="highest_key" value="G6"></td>
+                </tr>
+                <tr>
+                    <th>frequency in hz of note A4</th>
+                    <td><input type="number" name="pitch" id="pitch" value="440"></td>
+                </tr>
+            </table>
+            <button onclick="update_instrument()">submit item</button>
+        </span>
+        <span class="right">
+            <h2>wire material</h2>
+            <table>
+                <th></th>
+            </table>
+        </span>
+        </span>
+        <hr>
+        <span id="strings">
+            <h2>output</h2>
+            <table id="string_table">
+                <tr id="string_tbl_header">
+                    <th>std_note</th>
+                    <th>name</th>
+                    <th>frequency</th>
+                    <th>wire_material</th>
+                    <th>length</th>
+                    <th>diameter</th>
+                    <th>wire_count</th>
+                    <th>force</th>
+                </tr>
+            </table>
+            
+        </span>
+    </div>
+    <footer>
+        <i>created by <a href="https://github.com/Quiet-Clicking-Sounds">Quiet-Clicking-Sounds</a>.</i>
+    </footer>
+</body>
+
+</html>
