@@ -7,7 +7,8 @@ from math import pi
 import definitions
 from instrument.measurements import Distance, Force, Density
 
-_note_names_ = ('A', 'A♯', 'B', 'C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯')
+_note_names_ = ('A', 'A♯', 'B', 'C', 'C♯', 'D',
+                'D♯', 'E', 'F', 'F♯', 'G', 'G♯')
 
 
 def note_name_to_number(name: str) -> int:
@@ -20,7 +21,8 @@ def note_name_to_number(name: str) -> int:
     """
     name = name.upper()
     name = name.replace('#', '♯')  # replace with correct hash mark
-    match = re.match(r'([A-G][#♯]?)(-?\d*)', name)  # match letter (+sharp) (+ number)
+    # match letter (+sharp) (+ number)
+    match = re.match(r'([A-G][#♯]?)(-?\d*)', name)
     note_i = match.group(1)
     if match.group(2) == '':
         # checks for number after the letter (+ '#'), if none set to 0'th octave
@@ -99,6 +101,20 @@ class _WireMaterial:
         for k, material in cls._name_dict.items():
             print(f"{material.code} - {material.name} - {str(material.density)}")
 
+    @classmethod
+    def material_list(cls):
+        mat_list = []
+        for k, material in cls._name_dict.items():
+            mat_list.append((
+                str(material.code), 
+                str(material.name), 
+                str(material.density)
+                ))
+        return mat_list
+
+get_material_list = _WireMaterial.material_list
+get_material_print = _WireMaterial.print_types
+
 
 with open(definitions.ROOT_DIR / "instrument/standard_wire_types.csv", 'r') as f:
     # import standard wire materials
@@ -149,7 +165,8 @@ class Note:
     def calculate_frequency(self):
         """ calculate the frequency of `Note` based the pitch of A1 in the parent :class:`Insrument` """
         # frequency = 2 ** ((note_number - 49) / 12 ) * (frequency of A1)
-        self.frequency = 2 ** ((self.std_note - 49) / 12) * self.instrument.pitch_a4()
+        self.frequency = 2 ** ((self.std_note - 49) / 12) * \
+            self.instrument.pitch_a4()
 
     def set_material(self, code: str):
         """ :param code: wire material code given as string """
@@ -204,10 +221,34 @@ class Note:
         gcm = pi_hz * le * di * den
         return Force(g_cm_s2=gcm * self.wire_count)
 
+    def required_force_settings(self) -> bool:
+        return self.frequency and self.length and self.diameter and self.wire_material
+
+    def name(self) -> str:
+        return note_number_to_name(self.std_note)
+
+    def note_data(self, length=True, diameter=True, material=True, count=True, tension=True) -> list[str, ]:
+        """
+        :param material: material of the string
+        :param length: length of the string
+        :param diameter: diameter of the string
+        :param count: number of strings for the note
+        :param tension: total tension for the note
+        :return:
+        """
+        information = [self.std_note,
+                       self.name(),
+                       f'{self.frequency:2f}',
+                       self.wire_material if material and self.wire_material else '',
+                       self.length if length and self.length else '',
+                       self.diameter if diameter and self.diameter else '',
+                       self.wire_count if count and self.wire_count else '',
+                       self.force() if tension and self.required_force_settings() else '']
+        information = [str(x) for x in information]
+        return information
+
 
 class Instrument:
-    """
-    """
     notes: dict[int, Note]
     _pitch: float
 
@@ -217,14 +258,16 @@ class Instrument:
         :param highest_key: lowest key on the Instrument, given as std number (A0=1) or Scientific Name 'A#2'
         :param pitch: frequency of note A1 in hz
         """
-        self._pitch = pitch
-
         if isinstance(lowest_key, str):
             lowest_key: int = note_name_to_number(lowest_key)
         if isinstance(highest_key, str):
             highest_key: int = note_name_to_number(highest_key)
+        if isinstance(pitch, str):
+            pitch = float(pitch)
+        self._pitch = pitch
 
-        self.notes = {i: Note(self, i) for i in range(lowest_key, highest_key + 1)}
+        self.notes = {i: Note(self, i)
+                      for i in range(lowest_key, highest_key + 1)}
 
     def drop_key(self, key: str | int) -> None:
         """
@@ -234,7 +277,7 @@ class Instrument:
         self.notes.pop(note_name_to_number(key))
 
     def pitch_a4(self) -> float:
-        """ get frequency of A1 in the :class:`Instrument`"""
+        """ get frequency of A4 in the :class:`Instrument`"""
         return self._pitch
 
     def set_pitch(self, pitch: float):
@@ -265,7 +308,8 @@ class Instrument:
         :param function: any function, applied as function(note)
         :param note_list: list of notes, given as std number (A0=1) or Scientific Name 'A#2' or a combination of both
         """
-        note_list = [var if isinstance(var, int) else note_name_to_number(var) for var in note_list]
+        note_list = [var if isinstance(
+            var, int) else note_name_to_number(var) for var in note_list]
         for note in note_list:
             self.apply_to_note(function, note)
 
@@ -284,3 +328,14 @@ class Instrument:
         """
         for _, note in self.notes.items():
             yield note
+
+    def note_dictionary(self, **kwargs) -> dict[str, list[...]]:
+        """
+        return a dict of note information
+        :param
+        :return:
+        """
+        note_dict = {}
+        for number, note in self.notes.items():
+            note_dict[note.name()] = note.note_data(**kwargs)
+        return note_dict

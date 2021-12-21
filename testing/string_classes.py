@@ -1,6 +1,7 @@
 import unittest
 
-from instrument.classes import note_name_to_number, Distance, Force, Density
+from instrument import Distance, Force, Density
+from instrument.instrument_classes import note_name_to_number
 
 
 class MyTestCase(unittest.TestCase):
