@@ -11,6 +11,7 @@ _note_names_ = ('A', 'A♯', 'B', 'C', 'C♯', 'D',
                 'D♯', 'E', 'F', 'F♯', 'G', 'G♯')
 
 
+
 def note_name_to_number(name: str) -> int:
     """
     convert note names into standard scientific note numbers \n
@@ -76,8 +77,10 @@ class _WireMaterial:
         self._code_dict.pop(self.code)
         self._name_dict.pop(self.name)
 
-    def __str__(self):
-        return f'{self.code}: {self.density} kg/m^2 | {self.name}'
+    def __str__(self,long=False):
+        if long:
+            return f'{self.code}: {self.density} kg/m^2 | {self.name}'
+        return f'{self.code}'
 
     @classmethod
     def get_by_code(cls, code):
@@ -85,7 +88,7 @@ class _WireMaterial:
         get :class:`_WireMaterial` item by code \n
         :param code: given code for a wire
         """
-        return cls._code_dict[code]
+        return cls._code_dict.get(code, None)
 
     @classmethod
     def get_by_name(cls, name):
@@ -106,15 +109,15 @@ class _WireMaterial:
         mat_list = []
         for k, material in cls._name_dict.items():
             mat_list.append((
-                str(material.code), 
-                str(material.name), 
+                str(material.code),
+                str(material.name),
                 str(material.density)
-                ))
+            ))
         return mat_list
+
 
 get_material_list = _WireMaterial.material_list
 get_material_print = _WireMaterial.print_types
-
 
 with open(definitions.ROOT_DIR / "instrument/standard_wire_types.csv", 'r') as f:
     # import standard wire materials
@@ -166,7 +169,7 @@ class Note:
         """ calculate the frequency of `Note` based the pitch of A1 in the parent :class:`Insrument` """
         # frequency = 2 ** ((note_number - 49) / 12 ) * (frequency of A1)
         self.frequency = 2 ** ((self.std_note - 49) / 12) * \
-            self.instrument.pitch_a4()
+                         self.instrument.pitch_a4()
 
     def set_material(self, code: str):
         """ :param code: wire material code given as string """
@@ -175,13 +178,13 @@ class Note:
     def set_length(self, length: Distance | float):
         """ :param length: :class:`Distance` or as millimeters """
         if not isinstance(length, Distance):
-            length = Distance(mm=length)
+            length = Distance(length)
         self.length: Distance = length
 
     def set_diameter(self, diameter: Distance | float):
         """ :param diameter: :class:`Distance` or as millimeters """
         if not isinstance(diameter, Distance):
-            diameter = Distance(mm=diameter)
+            diameter = Distance(diameter)
         self.diameter: Distance = diameter
 
     def set_wire_count(self, wire_count: int):
@@ -227,7 +230,7 @@ class Note:
     def name(self) -> str:
         return note_number_to_name(self.std_note)
 
-    def note_data(self, length=True, diameter=True, material=True, count=True, tension=True) -> list[str, ]:
+    def get_note_data(self, length=True, diameter=True, material=True, count=True, tension=True) -> list[str,]:
         """
         :param material: material of the string
         :param length: length of the string
@@ -246,6 +249,16 @@ class Note:
                        self.force() if tension and self.required_force_settings() else '']
         information = [str(x) for x in information]
         return information
+
+    def set_note_data(self, material=None, length=None, diameter=None, count=None):
+        if material:
+            self.set_material(material)
+        if length:
+            self.set_length(length)
+        if diameter:
+            self.set_diameter(diameter)
+        if count:
+            self.set_wire_count(count)
 
 
 class Instrument:
@@ -337,5 +350,17 @@ class Instrument:
         """
         note_dict = {}
         for number, note in self.notes.items():
-            note_dict[note.name()] = note.note_data(**kwargs)
+            note_dict[note.name()] = note.get_note_data(**kwargs)
         return note_dict
+
+    def update_notes_from_lists(self, note_list: list[list[str]]):
+        if len(note_list) < 1:
+            return
+        for note in note_list:
+            note_number = int(note[0])
+            self.notes[note_number].set_note_data(
+                material=note[3],
+                length=note[4],
+                diameter=note[5],
+                count=note[6]
+            )
