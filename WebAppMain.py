@@ -37,9 +37,11 @@ def instrument_update_event(*args):
 @socketio.event
 def instrument_updater(*args):
     print(args,'event')
-    instrument = Instrument(**args[0])
-
-
+    basic_inst = args[0]
+    string_inst = args[1]
+    instrument = Instrument(**basic_inst)
+    instrument.update_notes_from_lists(string_inst)
+    print(instrument.note_dictionary())
     emit('responce', instrument.note_dictionary())
 
 
