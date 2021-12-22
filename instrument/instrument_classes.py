@@ -82,6 +82,9 @@ class _WireMaterial:
             return f'{self.code}: {self.density} kg/m^2 | {self.name}'
         return f'{self.code}'
 
+    def __eq__(self, other:_WireMaterial):
+        return self.code == other.code and self.density == other.density and self.name == other.name
+
     @classmethod
     def get_by_code(cls, code):
         """
