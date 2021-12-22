@@ -22,5 +22,5 @@ if __name__ == '__main__':
         note.set_wire(*test_harpsichord[i])
         i += 1
     print(harpsichord)
-    for note in harpsichord.iter_notes():
-        print(note)
+
+    instrument.plot_instrument(harpsichord)
