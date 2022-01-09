@@ -24,3 +24,4 @@ if __name__ == '__main__':
     print(harpsichord)
 
     instrument.plot_instrument(harpsichord)
+    print(1)
