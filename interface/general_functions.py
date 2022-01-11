@@ -48,7 +48,12 @@ def note_number_to_name(number: int) -> str:
     return f'{name}{octave}'
 
 
-def bind_select_all(*entries: ttk.Entry):
+def bind_highlighting_on_focus(*entries: ttk.Entry):
+    """
+    For each item in *entries bind <FocusIn> & <FocusOut> to select all, and deselect all
+    :param entries:
+    :return:
+    """
     for entry in entries:
         entry: ttk.Entry
         entry.bind('<FocusIn>', lambda e: e.widget.select_range(0, tk.END), add=True)
