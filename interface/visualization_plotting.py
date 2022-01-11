@@ -64,7 +64,7 @@ def plotter_tension(instrument: Instrument, fig_size_px=(1200, 800)) -> Figure:
             _x_tick_names.append(note.get_std_note_name())
 
     ax.scatter(x=plot_x, y=plot_y, c=plot_c, marker=marker)
-    ax.plot(plot_x, poly_fit(plot_x, plot_y), '.k')
+    ax.plot(plot_x, poly_fit(plot_x, plot_y), '-k', linewidth=0.5)
     ax.set_xticks(_x_tick_numbers)
     ax.set_xticklabels(_x_tick_names)
 
