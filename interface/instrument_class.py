@@ -11,7 +11,7 @@ from interface.material_and_measures import Distance, Force, WireMaterial
 
 
 class Note:
-    """ Given note """
+    """ A single note in an instrument, contains functions and data related to the wire used  """
     instrument: Instrument
     _std_note: int
     _material_select: tk.StringVar
@@ -20,6 +20,8 @@ class Note:
     _wire_count: tk.IntVar
     _frequency_var: tk.StringVar
     _frequency_float: float
+    _tkk_items: list[ttk.Label | ttk.Combobox | ttk.Entry]
+    tkk_input_items: list[ttk.Combobox | ttk.Entry]
 
     def __init__(self, instrument: Instrument, std_note: int):
         """
@@ -56,29 +58,30 @@ class Note:
                            _combo_material_select, _ent_length, _ent_diameter, _ent_wire_count, _ent_force]
         self.tkk_input_items = [_combo_material_select, _ent_length, _ent_diameter, _ent_wire_count]
 
-        # grid set
+        # set grid positions of items, uses the order set by tkk_input_items list
         for i, _t in enumerate(self._tkk_items):
             _t.grid(row=_row, column=i, sticky=tk.EW)
 
+        # bind movement keys to tk input items
         for _n, _t in enumerate(self.tkk_input_items):
             # bind force calculation on focus loss
             _t.bind("<FocusOut>", self.update_force, add=True)
             # bind return to drop a cell down
-            _t.bind("<Right>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n,0, 1))
-            _t.bind("<Left>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n,0, -1))
+            _t.bind("<Right>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, 0, 1))
+            _t.bind("<Left>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, 0, -1))
             _t.bind("<Shift-Return>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, -1))
             _t.bind("<Up>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, -1))
             _t.bind("<Return>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, 1))
             _t.bind("<Down>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, 1))
 
-        general_functions.bind_select_all(_ent_length, _ent_diameter, _ent_wire_count)
+        general_functions.bind_highlighting_on_focus(_ent_length, _ent_diameter, _ent_wire_count)
 
-    def unbind(self):
+    def destroy(self):
         for i_ in self._tkk_items:
             i_.destroy()
 
     def calculate_frequency(self):
-        """ calculate the _frequency_var of `Note` based the pitch of A1 in the parent :class:`Insrument` """
+        """ calculate the _frequency_var of `Note` based the pitch of A1 in the parent :class:`Instrument` """
         # _frequency_var = 2 ** ((note_number - 49) / 12 ) * (_frequency_var of A1)
         self._frequency_float = 2 ** ((self.get_std_note_number() - 49) / 12) * self.instrument.get_pitch()
         self._frequency_var.set(f"{self._frequency_float:>.2f}hz")
@@ -151,7 +154,6 @@ class Note:
     def set_focus_to_input(self, input_pos):
         """ Used for binding <Enter>
         :param input_pos: position on the input items list
-        :return:
         """
         try:
             self.tkk_input_items[input_pos].focus_set()
@@ -206,42 +208,53 @@ class Instrument(ttk.Frame):
         _pitch.grid(row=1, column=5, sticky=tk.EW)
         _button.grid(row=0, column=6, rowspan=2, columnspan=3, sticky=tk.S)
 
-        for i, name in enumerate(
-                ['Number', 'Name', 'Frequency', 'Material', 'Length(mm)', 'Diameter(mm)', 'Count', 'Force(kgF)']):
+        # add heading labels for Notes
+        for i, name in enumerate(['Number', 'Name', 'Frequency', 'Material',
+                                  'Length(mm)', 'Diameter(mm)', 'Count', 'Force(kgF)']):
             ttk.Label(self, text=name, anchor=tk.CENTER).grid(row=2, column=i, sticky=tk.EW)
             self.grid_columnconfigure(i,
                                       weight=1,
                                       minsize=75 if i in {0, 1, 2, 7} else None)
 
         # bindings
-        general_functions.bind_select_all(_inst_name, _lowest_key, _highest_key, _pitch)
+        general_functions.bind_highlighting_on_focus(_inst_name, _lowest_key, _highest_key, _pitch)
 
         self.notes = dict()
 
     def update_notes(self, *args):
+        """
+        update the notes shown based on the lowest and highest keys given,
+        destroys notes outside of the given range
+        """
         note_numbers = list(range(self.get_lowest_key(), self.get_highest_key() + 1))
         # add new notes
         for nt in note_numbers:
-            self.notes.setdefault(nt, Note(self, nt))
+            if nt in self.notes:
+                continue
+            self.notes[nt] = Note(self, nt)
         # delete no longer required Notes
         for k in list(self.notes.keys()):
             if k not in set(note_numbers):
-                self.notes[k].unbind()
+                self.notes[k].destroy()
                 self.notes.pop(k)
         # update frequencies
         for k, nt in self.notes.items():
             nt.calculate_frequency()
 
     def get_name(self) -> str:
+        """ get the given Instrument name as a string """
         return self.inst_name.get()
 
     def get_pitch(self) -> float:
+        """ get Instrument pitch as a float"""
         return self.pitch.get()
 
     def get_lowest_key(self) -> int:
+        """ get lowest key as an integer """
         return general_functions.note_name_to_number(self.lowest_key.get())
 
     def get_highest_key(self) -> int:
+        """ get highest key as an integer """
         return general_functions.note_name_to_number(self.highest_key.get())
 
     def apply_to_note(self, function: typing.Callable[[Note], any], note_number: int | str):
@@ -284,10 +297,17 @@ class Instrument(ttk.Frame):
             yield note
 
     def note_list(self) -> list[Note]:
+        """ get a list of all Notes currently in the Instrument """
         return list(self.notes.values())
 
     def state_import(self, data: dict):
-        """ convert dict of input fields to an instrument, includes calls for Note fields"""
+        """
+        Convert dict of input fields to an Instrument, includes calls for Note fields.
+        This resets all current notes.
+        """
+        for k_, note in self.notes.items():
+            note.destroy()
+        self.notes = dict()
         self.inst_name.set(data['inst_name'])
         self.lowest_key.set(data['lowest_key'])
         self.highest_key.set(data['highest_key'])
@@ -307,10 +327,12 @@ class Instrument(ttk.Frame):
                     notes=note_dict)
 
     def get_next_note_input(self, note_number: int, input_pos: int, note_increment=0, input_increment=0):
-        """ Used for binding <Enter>
+        """
+        Used for binding <Enter>
         :param note_number: integer representation of the note
         :param input_pos: position in the input items list of a Note
-        :return:
+        :param note_increment: number of positions to move vertically - positive moves down
+        :param input_increment: number of positions to move horizontally - positive moves right
         """
         input_count = 4
         note_number += note_increment
