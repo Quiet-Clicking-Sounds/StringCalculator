@@ -24,9 +24,6 @@ class PlotFrame(ttk.Frame):
     def create_plot(self, name: str):
         self.plot_body.new_plot(name)
 
-    def update_plots(self):
-        self.plot_body.update_plots()
-
 
 class PlotHeader(ttk.Frame):
     def __init__(self, parent: PlotFrame):
@@ -42,22 +39,21 @@ class PlotHeader(ttk.Frame):
 
 
 class PlotBody(ttk.Frame):
+    plot: tk.Canvas
+
     def __init__(self, parent, instrument: Instrument):
         super(PlotBody, self).__init__(parent)
         self.instrument = instrument
         self.plots: dict[str: tk.Canvas] = dict()
 
     def new_plot(self, name='Tension'):
-        if name in self.plots:
-            # destroy previous version
-            self.plots[name].destroy()
+        try:
+            self.plot.destroy()
+        except AttributeError:
+            pass
 
         fig: plot_func_type = plot_type_dict[name](self.instrument, (1920, 800))
         canvas = FigureCanvasTkAgg(fig, self)
         widget = canvas.get_tk_widget()
         widget.pack(fill='x', expand=True, side="top")
-        self.plots[name] = widget
-
-    def update_plots(self):
-        for key in list(self.plots.keys()):
-            self.new_plot(name=key)
+        self.plot = widget
