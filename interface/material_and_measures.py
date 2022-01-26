@@ -114,6 +114,9 @@ class WireMaterial:
         self._code_dict[self.code] = self
         self._name_dict[self.name] = self
 
+    def __hash__(self):
+        return hash((self.code, self.name, self.density))
+
     def delete(self):
         """
         Deletion routine to remove a given wire from the available stock types.
