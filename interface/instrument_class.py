@@ -6,7 +6,7 @@ import typing
 from math import pi
 from tkinter import ttk
 
-import general_functions
+from interface import general_functions
 from interface.material_and_measures import Distance, Force, WireMaterial
 
 
@@ -30,7 +30,7 @@ class Note:
         """
         if not isinstance(std_note, int):
             raise ValueError(std_note)
-        _row = std_note + 10
+        _row = std_note * 2 + 10
         self.instrument = instrument
         # Initialize variables
         self._std_note = std_note
@@ -55,8 +55,8 @@ class Note:
         _ent_wire_count = ttk.Entry(instrument, textvariable=self._wire_count)
         _ent_force = ttk.Label(instrument, textvariable=self._force)
         self._tkk_items = [_lbl_std_note, _lbl_str_note, _lbl_frequency,
-                           _combo_material_select, _ent_length, _ent_diameter, _ent_wire_count, _ent_force]
-        self.tkk_input_items = [_combo_material_select, _ent_length, _ent_diameter, _ent_wire_count]
+                           _ent_length, _combo_material_select, _ent_diameter, _ent_wire_count, _ent_force]
+        self.tkk_input_items = [_ent_length, _combo_material_select, _ent_diameter, _ent_wire_count]
 
         # set grid positions of items, uses the order set by tkk_input_items list
         for i, _t in enumerate(self._tkk_items):
@@ -74,7 +74,13 @@ class Note:
             _t.bind("<Return>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, 1))
             _t.bind("<Down>", lambda e, _n=_n: self.instrument.get_next_note_input(self._std_note, _n, 1))
 
+        # highlighter bindings
         general_functions.bind_highlighting_on_focus(_ent_length, _ent_diameter, _ent_wire_count)
+
+        # add separator above each C
+        if std_note % 12 == 4:
+            _separator = ttk.Separator(instrument, orient=tk.HORIZONTAL)
+            _separator.grid(column=0, columnspan=len(self._tkk_items), row=_row - 1, sticky=tk.NSEW)
 
     def destroy(self):
         for i_ in self._tkk_items:
@@ -209,12 +215,12 @@ class Instrument(ttk.Frame):
         _button.grid(row=0, column=6, rowspan=2, columnspan=3, sticky=tk.S)
 
         # add heading labels for Notes
-        for i, name in enumerate(['Number', 'Name', 'Frequency', 'Material',
-                                  'Length(mm)', 'Diameter(mm)', 'Count', 'Force(kgF)']):
+        for i, name in enumerate(['Number', 'Name', 'Frequency', 'Length(mm)', 'Material',
+                                  'Diameter(mm)', 'Count', 'Force(kgF)']):
             ttk.Label(self, text=name, anchor=tk.CENTER).grid(row=2, column=i, sticky=tk.EW)
             self.grid_columnconfigure(i,
                                       weight=1,
-                                      minsize=75 if i in {0, 1, 2, 7} else None)
+                                      minsize=75 if i in {0, 1, 2, 7} else 50)
 
         # bindings
         general_functions.bind_highlighting_on_focus(_inst_name, _lowest_key, _highest_key, _pitch)
