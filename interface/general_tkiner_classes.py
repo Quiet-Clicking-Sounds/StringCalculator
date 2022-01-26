@@ -18,7 +18,7 @@ class TkInterface(tk.Tk):
     instrument: Instrument
     plt: PlotFrame
 
-    def __init__(self, title="Stringing Calculator", geometry="900x900"):
+    def __init__(self, title="Stringing Calculator", geometry="900x900", import_file_on_init: str | None = None):
         """
         Usage::
             program_root = TkInterface()\n
@@ -53,6 +53,10 @@ class TkInterface(tk.Tk):
         style.set_theme("black")
         style.configure('TEntry', bg="#4f5358", fg="#4f5358")
         style.configure('TCombobox', bg="#4f5358", fg="#4f5358")
+        if import_file_on_init:
+            with open(import_file_on_init, 'r') as f:
+                import_data = json.loads(f.read())
+            self.instrument.state_import(import_data)
 
     def __forget_packing(self):
         for item in [self.scroll_area, self.plt]:
@@ -146,6 +150,7 @@ class Menu(tk.Menu):
             f.write(json.dumps(export_data))
 
     def __save_as_handler(self, *arg):
+        """ call save handler with forced new filename """
         return self.__save_handler(force_new_save=True)
 
 
